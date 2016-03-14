@@ -1,0 +1,15 @@
+<launch>
+
+  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
+	<arg name="map_file" value="/home/ubuntu/turtlebot_ws/src/turtlebot_demos/maps/office_map.yaml" />
+  </include>
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch">
+  </include>
+
+  <node name="order_coffee" pkg="turtlebot_demos" type="order_coffee.py" output="screen" launch-prefix="xterm -e" />
+  <node name="coffee_bot_test" pkg="turtlebot_demos" type="coffee_bot_test.py" output="screen" />
+
+ '<!--' <machine name="ai2" address="ai2@192.168.1.7" user="ai2" env-loader="/opt/ros/indigo/env.sh" />
+  	<node machine="ai2" name="coffee_delivery_demo" pkg="turtlebot_demos" type="coffee_delivery_demo.py" output="screen" launch-prefix="xterm -e" />
+'-->'
+</launch>

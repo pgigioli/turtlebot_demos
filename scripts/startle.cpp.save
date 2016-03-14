@@ -1,0 +1,13 @@
+#include "ros/ros.h"
+#include "audio_common_msgs/AudioData.h"
+
+void startleCallback(const audio_common_msgs::AudioData msg)
+{
+	ROS_INFO("I heard a sound");
+}
+
+int main(int argc, char **argv)
+{
+	ros::init(argc, argv, "startle");
+	ros::NodeHandle n;
+	ros::Subscriber sub = n.subscribe("/audio", 
