@@ -1,0 +1,18 @@
+<launch>
+
+  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
+        <arg name="map_file" value="/home/ubuntu/catkin_ws/src/turtlebot_demos/maps/office_map.yaml" />
+  </include>
+
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+
+  <include file="$(find kobuki_auto_docking)/launch/coffeebot.launch"/>
+
+  <node pkg="rosservice" type="rosservice" name="global_loc" args="call --wait /global_localization"/>
+
+  <node name="autodocking" pkg="turtlebot_demos" type="autodocking.py" output="screen" launch-prefix="xterm -e" />
+
+  <param name="/amcl/max_particles" value="10000"/> 
+  <param name="/amcl/min_particles" value="2500"/> 
+
+</launch>

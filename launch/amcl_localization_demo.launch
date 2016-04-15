@@ -1,0 +1,50 @@
+<launch>
+
+  <include file="$(find turtlebot_navigation)/launch/amcl_demo.launch">
+	<arg name="map_file" value="/home/ubuntu/catkin_ws/src/turtlebot_demos/maps/office_map.yaml" />
+  </include>
+
+  <node pkg="rosservice" type="rosservice" name="global_loc" args="call --wait /global_localization"/>
+
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+
+  <include file="$(find kobuki_auto_docking)/launch/coffeebot.launch"/>
+
+  <node name="get_pose" pkg="turtlebot_demos" type="get_pose" output="screen" launch-prefix="xterm -e" />
+  <node name="set_pose" pkg="turtlebot_demos" type="set_pose" output="screen" launch-prefix="xterm -e" />
+  <node name="autodocking" pkg="turtlebot_demos" type="autodocking.py" output="screen" launch-prefix="xterm -e" /> 
+
+<!--  <machine name="ai2" address="192.168.1.7" env-loader="/opt/ros/indigo/env.sh" user="ai2" />
+
+  <node machine="ai2" name="rviz_launch" pkg="beginner_tutorials" type="rviz_launch.py" output="screen" launch-prefix="xterm -e" />  
+-->
+<!-- amcl parameters -->
+  <param name="/amcl/kld_err" value="0.01"/>
+  <param name="/amcl/kld_z" value="0.99"/>
+  <param name="/amcl/laser_lambda_short" value="0.1"/>
+  <param name="/amcl/laser_likelihood_max_dist" value="2.0"/>
+  <param name="/amcl/laser_max_beams" value="60"/>
+  <param name="/amcl/laser_max_range" value="12.0"/>
+  <param name="/amcl/laser_model_type" value="likelihood_field"/>
+  <param name="/amcl/laser_sigma_hit" value="0.2"/>
+  <param name="/amcl/laser_z_hit" value="0.5"/>
+  <param name="/amcl/laser_z_max" value="0.05"/>
+  <param name="/amcl/laser_z_rand" value="0.5"/>
+  <param name="/amcl/laser_z_short" value="0.05"/>
+  <param name="/amcl/max_particles" value="10000"/> <!-- *** -->
+  <param name="/amcl/min_particles" value="2500"/> <!-- *** -->
+  <param name="/amcl/recovery_alpha_fast" value="0.1"/> <!-- *** -->
+  <param name="/amcl/recovery_alpha_slow" value="0.1"/> <!-- *** -->
+  <param name="/amcl/resample_interval" value="2"/> <!-- *** -->
+  <param name="/amcl/transform_tolerance" value="1.0"/>
+  <param name="/amcl/update_min_a" value="0.1"/> <!-- *** -->
+  <param name="/amcl/update_min_d" value="0.2"/> <!-- *** -->
+  <param name="/amcl/use_map_topic" value="True"/> <!-- *** -->
+
+<!-- dwa planner parameters -->
+  <param name="/move_base/DWAPlannerROS/max_vel_x" value="0.25"/>
+  <param name="/move_base/DWAPlannerROS/acc_lim_x" value="0.5"/>
+  <param name="/move_base/DWAPlannerROS/yaw_goal_tolerance" value="0.05"/>
+  <param name="/move_base/DWAPlannerROS/xy_goal_tolerance" value="0.05"/>
+
+</launch>
