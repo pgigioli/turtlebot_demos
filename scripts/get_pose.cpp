@@ -78,7 +78,7 @@ int main(int argc, char **argv)
                 Triple new_coordinates = Triple(pose.position.x, pose.position.y, pose.orientation.z, pose.orientation.w);
 
                 ofstream coord_file;
-                coord_file.open("/home/ubuntu/turtlebot_ws/src/turtlebot_demos/scripts/map_coordinates.txt", ios::app);
+                coord_file.open("/home/ubuntu/catkin_ws/src/turtlebot_demos/scripts/map_coordinates.txt", ios::app);
 
                 coord_file << name << "," << new_coordinates;
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
                 cout << "Coordinates Map\n";
 		cout << " \n";
 
-                ifstream coord_file_new("/home/ubuntu/turtlebot_ws/src/turtlebot_demos/scripts/map_coordinates.txt");
+                ifstream coord_file_new("/home/ubuntu/catkin_ws/src/turtlebot_demos/scripts/map_coordinates.txt");
                 while(coord_file_new)
                 {
                         string s;

@@ -35,7 +35,7 @@ def GoCloseToTheChargingStation():
         goal = MoveBaseGoal()
         goal.target_pose.header.frame_id = '/map'
         goal.target_pose.header.stamp = rospy.Time.now()
-        goal.target_pose.pose = Pose(Point(float(-0.545),float(-0.3115),float(0)), Quaternion(float(0),float(0),float(0.0085),float(1)))
+        goal.target_pose.pose = Pose(Point(float(0.0),float(0.0),float(0)), Quaternion(float(0),float(0),float(0.0085),float(1)))
         move_base.send_goal(goal)
         success = move_base.wait_for_result(rospy.Duration(60))
         if success:
@@ -62,10 +62,38 @@ def Backup():
                 r.sleep()
         cmd_vel.publish(Twist())
         return True
+
+def forward_and_rotate():
+	cmd_vel = rospy.Publisher('cmd_vel_mux/input/navi', Twist, queue_size=10)
+        move_cmd = Twist()
+        move_cmd.linear.x = 0.2
+        move_cmd.angular.z = 0
+        r = rospy.Rate(10)
+        temp_count = 0
+        while (not rospy.is_shutdown() and temp_count < 25):
+                cmd_vel.publish(move_cmd)
+                temp_count = temp_count+1
+                r.sleep()
+        #cmd_vel.publish(Twist())
+	
+	move_cmd.linear.x = 0.0
+	move_cmd.angular.z = 0.75
+	while (not rospy.is_shutdown() and temp_count >= 25 and temp_count < 120):
+		cmd_vel.publish(move_cmd)
+		temp_count = temp_count+1
+		r.sleep()
+	#cmd_vel.publish(Twist))
+
+        return True
+	
 if __name__ == '__main__':
 	rospy.init_node('autodocking', anonymous=True)
-	rospy.loginfo("test3")
-	Backup();
+	rospy.sleep(3.)
+	#Backup();
 	while (not rospy.is_shutdown()):
-		rospy.Subscriber("/mobile_base/events/button",ButtonEvent,ButtonEventCallback)
+		input = raw_input("Type 'return' to return to base: ")
+		if input == 'return':
+			forward_and_rotate()
+			GoCloseToTheChargingStation()
+		#rospy.Subscriber("/mobile_base/events/button",ButtonEvent,ButtonEventCallback)
 		rospy.spin()

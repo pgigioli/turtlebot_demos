@@ -11,6 +11,9 @@ find_package(catkin REQUIRED COMPONENTS
   audio_common_msgs
   geometry_msgs
   tf
+  sensor_msgs
+  cv_bridge
+  image_transport
 )
 
 ## System dependencies are found with CMake's conventions
@@ -197,8 +200,12 @@ add_executable(pose_publisher scripts/pose_publisher.cpp)
 add_executable(startle scripts/startle.cpp)
 add_executable(get_pose scripts/get_pose.cpp)
 add_executable(set_pose scripts/set_pose.cpp)
+add_executable(send_exploration_goal scripts/send_exploration_goal.cpp)
+add_executable(image_converter scripts/image_converter.cpp)
 
 target_link_libraries(startle ${catkin_LIBRARIES})
 target_link_libraries(pose_publisher ${catkin_LIBRARIES})
 target_link_libraries(get_pose ${catkin_LIBRARIES})
 target_link_libraries(set_pose ${catkin_LIBRARIES})
+target_link_libraries(send_exploration_goal ${catkin_LIBRARIES})
+target_link_libraries(image_converter ${catkin_LIBRARIES})
