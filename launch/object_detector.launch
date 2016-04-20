@@ -12,6 +12,7 @@
 -->
 
   <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
+  <!-- <include file="$(find turtlebot_demos)/launch/uvc_cam.launch" /> -->
 
   <node name="classify_camera" pkg="ros_caffe" type="classify_camera" launch-prefix="xterm -e" />
 

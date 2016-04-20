@@ -4,6 +4,7 @@ import sys
 import rospy
 import numpy as np
 import cv2
+#import cv2gpu
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
@@ -14,6 +15,12 @@ class face_detector:
 		self.profile_cascade = cv2.CascadeClassifier('/home/ubuntu/haarcascades/haarcascade_profileface.xml') 
 		self.eye_cascade = cv2.CascadeClassifier('/home/ubuntu/haarcascades/haarcascade_eye.xml') 
 		
+		#self.cv2gpu = cv2gpu
+		#if self.cv2gpu.is_cuda_compatible():
+    		#	self.cv2gpu.init_gpu_detector('/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml')
+		#else:
+    		#	self.cv2gpu.init_cpu_detector('/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml')
+	
 		self.image_pub = rospy.Publisher("faceDetection",Image)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.callback)
 		self.bridge = CvBridge()
@@ -26,6 +33,8 @@ class face_detector:
 
 		gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
 
+		#faces = self.cv2gpu.find_faces(cv_image)
+	
 		faces = self.face_cascade.detectMultiScale(gray, 1.3, 5)
 		profiles = self.profile_cascade.detectMultiScale(gray, 1.2, 6)
 		for (x,y,w,h) in faces:
@@ -48,7 +57,7 @@ class face_detector:
 
 def main(args):
 	fd = face_detector()
-	rospy.init_node('face_detector', anonymous=True)
+	rospy.init_node('face_detection', anonymous=True)
 	try:
 		rospy.spin()
 	except KeyboardInterrupt:

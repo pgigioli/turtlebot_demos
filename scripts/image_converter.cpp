@@ -17,7 +17,7 @@ class ImageConverter
 public:
   ImageConverter() : it_(nh_)
   {
-	image_sub_ = it_.subscribe("/camera/rgb/image_raw", 1,
+	image_sub_ = it_.subscribe("/usb_cam/image_raw", 1,
 	  &ImageConverter::imageCb, this);
 	image_pub_ = it_.advertise("/image_converter/output_video", 1);
 
