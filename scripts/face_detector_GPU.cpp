@@ -6,6 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
 #include <opencv2/gpu/gpu.hpp>
+#include <geometry_msgs/Point.h>
 
 #include <iostream>
 #include <stdio.h>
@@ -15,12 +16,10 @@ using namespace cv;
 using namespace cv::gpu;
 
 static const std::string OPENCV_WINDOW = "Face detection with GPU support";
+static const std::string CROPPED_WINDOW = "Face cropped";
 string face_cascade_name = "/home/ubuntu/haarcascades/GPU/haarcascade_frontalface_alt.xml";
-//string profile_cascade_name = "/home/ubuntu/OpenCV-detection-models/haarcascades_GPU/haarcascade_profileface.xml";
-//string eyes_cascade_name = "/home/ubuntu/OpenCV-detection-models/haarcascades_GPU/haarcascade_eye.xml";
 CascadeClassifier_GPU face_cascade;
-CascadeClassifier_GPU profile_cascade;
-CascadeClassifier_GPU eyes_cascade;
+int ct = 0;
 
 class faceDetector
 {
@@ -29,6 +28,8 @@ class faceDetector
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
 
+  ros::Publisher ROI_coordinate_pub_;
+
 public:
   faceDetector() : it_(nh_)
   {
@@ -36,17 +37,40 @@ public:
 	  &faceDetector::callback, this);
 	image_pub_ = it_.advertise("/face_detection_GPU", 1);
 
-	cv::namedWindow(OPENCV_WINDOW);
+	ROI_coordinate_pub_ = nh_.advertise<geometry_msgs::Point>("ROI_coordinate", 1);
+
+	cv::namedWindow(OPENCV_WINDOW, WINDOW_NORMAL);
+	//cv::namedWindow(CROPPED_WINDOW, WINDOW_NORMAL);
   }
 
   ~faceDetector()
   {
 	cv::destroyWindow(OPENCV_WINDOW);
+	//cv::destroyWindow(CROPPED_WINDOW);
+  }
+
+  GpuMat rotateImage(GpuMat image, float angle)
+  {
+	if (angle == 0) { return image; }
+
+	float width = image.size().width;
+	float height = image.size().height;
+
+	Mat rot_mat = getRotationMatrix2D(Point(width/2, height/2), angle, 0.9);
+	GpuMat rotated_img(Size(image.size().height, image.size().width), image.type());
+
+	warpAffine(image, rotated_img, rot_mat, rotated_img.size());
+
+	return rotated_img;
   }
 
   //subscriber callback function
   void callback(const sensor_msgs::ImageConstPtr& msg)
   {
+	double delay = (double)getTickCount();
+        double totaldelay = 0.0;
+
+	//convert image msg to Mat format
 	cv_bridge::CvImagePtr cv_ptr;
 	try
 	{
@@ -60,9 +84,6 @@ public:
 
 	// Load cascades
 	if( !face_cascade.load( face_cascade_name ) ){ std::cout << "Error loading face cascade" << endl; };
-  	// Leave out profile and eye detection for speed
-	//if( !face_cascade.load( profile_cascade_name ) ){ std::cout << "Error loading profile cascade" << endl; };
-	//if( !eyes_cascade.load( eyes_cascade_name ) ){ std::cout << "Error loading eyes cascade" << endl; };
 
 	// Get image frame and apply classifier
 	if (cv_ptr)
@@ -70,6 +91,10 @@ public:
 	  long frmCnt = 0;
 	  double totalT = 0.0;
 	  double t = (double)getTickCount();
+
+	  //create a copy of the image for the cropped window
+	  Mat cv_ptr_copy = cv_ptr->image.clone();
+
           //std::vector<Rect> faces;
 	  GpuMat faces;
 	  Mat frame_gray;
@@ -80,7 +105,19 @@ public:
   	  equalizeHist( frame_gray, frame_gray );
 
           //-- Detect faces
-  	  //face_cascade.detectMultiScale( gray_gpu, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+	  int count = 0;
+	  float angle = 0;
+
+	  //create a loop to test different angles.  set to count < 1 to disable
+	  while (count < 1)
+	  {
+	  gray_gpu = rotateImage(gray_gpu, angle);
+
+	  //iterate over angles by increment of 20 degrees
+	  count++;
+	  angle = angle + 20;
+
+	  //detect number of faces identified
 	  int detect_num = face_cascade.detectMultiScale(gray_gpu, faces, 1.1, 2, Size(30,30));
 
 	  Mat obj_host;
@@ -92,44 +129,105 @@ public:
 	  t=((double)getTickCount()-t)/getTickFrequency();
           totalT += t;
           frmCnt++;
+
+	  float ROI_center_x;
+	  float ROI_center_y;
+	  int face_exists = 0;
+
+		//loop to draw ROI boxes
           	for( size_t i = 0; i < detect_num; i++ )
           	{
-            	  Point pt1 = Point(cfaces[i].x-10, cfaces[i].y-10);//cfaces[i].t1();
+		  Point pt1 = Point(cfaces[i].x, cfaces[i].y);
 		  Size sz = cfaces[i].size();
-		  Point pt2(pt1.x+sz.width+20, pt1.y+sz.height+20);
+		  Point pt2(pt1.x+sz.width, pt1.y+sz.height);
+
+		  Mat ROI_cropped = cv_ptr_copy(Rect(pt1.x, pt1.y, sz.width, sz.height));
+
 		  rectangle(cv_ptr->image, pt1, pt2, Scalar(255));
-		  //ROI_cropped = cv_ptr->image(Rect(cfaces[i].x-10,cfaces[i].y-10,sz.width+20,sz.height+20));
 
-		  //Point center( faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5 );
-		  //rectangle( cv_ptr->image, Point(faces[i].x, faces[i].y), Point(faces[i].x+faces[i].width,
-		  //		faces[i].y+faces[i].height), Scalar(255,0,255), 4, 8, 0);
-		  // Leave out eye detection
-            	  //Mat faceROI = frame_gray( faces[i] );
-            	  /*std::vector<Rect> eyes;
+		  if (ROI_cropped.empty() == false)
+  	          {
+		      stringstream ss;
 
-                  //-- In each face, detect eyes
-            	  eyes_cascade.detectMultiScale( faceROI, eyes, 1.1, 2, 0 |CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+		      string name = "cropped_";
+		      string type = ".jpg";
 
-           	  for( size_t j = 0; j < eyes.size(); j++ )
-           	    {
-            	      Point center( faces[i].x + eyes[j].x + eyes[j].width*0.5,
-				faces[i].y + eyes[j].y + eyes[j].height*0.5 );
-            	      int radius = cvRound( (eyes[j].width + eyes[j].height)*0.25 );
-            	      circle( cv_ptr->image, center, radius, Scalar( 255, 0, 0 ), 4, 8, 0 );
-           	    }*/
+		      ss << name << ct <<type;
+
+		      string filename = ss.str();
+		      ss.str("");
+
+		      //imwrite(filename, ROI_cropped);
+
+		      ct++;
+
+            	      //imshow(CROPPED_WINDOW, ROI_cropped);
+               	      //cv::waitKey(3);
+         	  }
+
+		  float ROI_center_x = cfaces[i].x + sz.width*0.5;
+		  float ROI_center_y = cfaces[i].y + sz.height*0.5;
+
+		  face_exists = 1;
+
+		  // define center zone for face tracking
+		  int image_width;
+		  int image_height;
+		  ros::param::get("/usb_cam/image_width", image_width);
+		  ros::param::get("/usb_cam/image_height", image_height);
+
+		  float zone_x_min = (image_width * 0.5) - (image_width * 0.25 * 0.5);
+  		  float zone_x_max = (image_width * 0.5) + (image_width * 0.25 * 0.5);
+  		  float zone_y_min = (image_height * 0.5) - (image_height * 0.25 * 0.5);
+  		  float zone_y_max = (image_height * 0.5) + (image_height * 0.25 * 0.5);
+
+		  rectangle(cv_ptr->image, Point(zone_x_min, zone_y_min),
+				Point(zone_x_max, zone_y_max), Scalar(255,0,255));
           	}
+
+	  // Handle multiple faces by placing the center point at the mean of all ROIs
+  	  geometry_msgs::Point ROI_center;
+	  ROI_center.x = ROI_center_x;
+	  ROI_center.y = ROI_center_y;
+
+	  int x_total = 0;
+	  int y_total = 0;
+	  int total_points = 1;
+
+	  //get the mean of all points
+	  for ( size_t i = 0; i < detect_num; i++ )
+	  {
+		Size get_size = cfaces[i].size();
+		x_total = x_total + cfaces[i].x + get_size.width*0.5;
+		y_total = y_total + cfaces[i].y + get_size.height*0.5;
+		total_points = i + 1;
+	  }
+
+	  ROI_center.x = x_total / total_points;
+	  ROI_center.y = y_total / total_points;
+	  Point face_center(ROI_center.x, ROI_center.y);
+	  circle(cv_ptr->image, face_center, 2, Scalar(255,0,255), 2, 8, 0 );
+
+	  if (face_exists == 1)
+	  {
+		face_exists = 0;
+		ROI_coordinate_pub_.publish(ROI_center);
+	  }
+
   	  //-- Show what you got
-	  //if (ROI_cropped.empty() == 0)
-	  //{
-		//imshow("Face Window", ROI_cropped);
-	  //}
-  	  imshow( OPENCV_WINDOW, cv_ptr->image );
+          imshow( OPENCV_WINDOW, cv_ptr->image );
 	  cv::waitKey(3);
+
+	  delay = ((double)getTickCount()-delay)/getTickFrequency();
+          totaldelay += delay;
 
 	  image_pub_.publish(cv_ptr->toImageMsg());
 
-	  cout << "fps: " << 1.0/(totalT/(double)frmCnt) << endl;
-	 }
+	  cout << "Face Detection fps: " << 1.0/(totalT/(double)frmCnt) << endl;
+//	  cout << "OpenCV delay: " << totaldelay << endl;
+//	  cout << " " << endl;
+	  }
+	}
   }
 };
 

@@ -14,8 +14,8 @@ using namespace cv;
 
 static const std::string OPENCV_WINDOW = "Face detection with CPU support";
 string face_cascade_name = "/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml";
-string profile_cascade_name = "/home/ubuntu/haarcascades/haarcascade_profileface.xml";
-string eyes_cascade_name = "/home/ubuntu/haarcascades/haarcascade_eye.xml";
+//string profile_cascade_name = "/home/ubuntu/haarcascades/haarcascade_profileface.xml";
+//string eyes_cascade_name = "/home/ubuntu/haarcascades/haarcascade_eye.xml";
 CascadeClassifier face_cascade;
 CascadeClassifier profile_cascade;
 CascadeClassifier eyes_cascade;
@@ -34,7 +34,7 @@ public:
 	  &faceDetector::callback, this);
 	image_pub_ = it_.advertise("/face_detection_CPU", 1);
 
-	cv::namedWindow(OPENCV_WINDOW);
+	cv::namedWindow(OPENCV_WINDOW, WINDOW_NORMAL);
   }
 
   ~faceDetector()
@@ -45,6 +45,9 @@ public:
   //subscriber callback function
   void callback(const sensor_msgs::ImageConstPtr& msg)
   {
+	double delay = (double)getTickCount();
+        double totaldelay = 0.0;
+
 	cv_bridge::CvImagePtr cv_ptr;
 	try
 	{
@@ -65,6 +68,10 @@ public:
 	// Get image frame and apply classifier
 	if (cv_ptr)
 	{
+	  long frmCnt = 0;
+          double totalT = 0.0;
+          double t = (double)getTickCount();
+
           std::vector<Rect> faces;
 	  Mat frame_gray;
 
@@ -73,6 +80,10 @@ public:
 
           //-- Detect faces
   	  face_cascade.detectMultiScale( frame_gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+
+	  t=((double)getTickCount()-t)/getTickFrequency();
+          totalT += t;
+          frmCnt++;
 
           	for( size_t i = 0; i < faces.size(); i++ )
           	{
@@ -98,9 +109,15 @@ public:
   	  imshow( OPENCV_WINDOW, cv_ptr->image );
 	  cv::waitKey(3);
 
+	  delay = ((double)getTickCount()-delay)/getTickFrequency();
+          totaldelay += delay;
+
 	  image_pub_.publish(cv_ptr->toImageMsg());
 
-	 }
+	  cout << "fps: " << 1.0/(totalT/(double)frmCnt) << endl;
+//	  cout << "OpenCV delay: " << totaldelay << endl;
+//          cout << " " << endl; 
+	}
   }
 };
 
