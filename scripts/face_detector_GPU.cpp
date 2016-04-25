@@ -223,9 +223,8 @@ public:
 		face_exists = 0;
 		ROI_coordinate_pub_.publish(ROI_center);
 	  }
-
   	  //-- Show what you got
-          imshow( OPENCV_WINDOW, cv_ptr->image );
+	  imshow( OPENCV_WINDOW, cv_ptr->image );
 	  cv::waitKey(3);
 
 	  delay = ((double)getTickCount()-delay)/getTickFrequency();
