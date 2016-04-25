@@ -2,6 +2,7 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Image.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
@@ -40,13 +41,13 @@ public:
 	ROI_coordinate_pub_ = nh_.advertise<geometry_msgs::Point>("ROI_coordinate", 1);
 
 	cv::namedWindow(OPENCV_WINDOW, WINDOW_NORMAL);
-	//cv::namedWindow(CROPPED_WINDOW, WINDOW_NORMAL);
+	cv::namedWindow(CROPPED_WINDOW, WINDOW_NORMAL);
   }
 
   ~faceDetector()
   {
 	cv::destroyWindow(OPENCV_WINDOW);
-	//cv::destroyWindow(CROPPED_WINDOW);
+	cv::destroyWindow(CROPPED_WINDOW);
   }
 
   GpuMat rotateImage(GpuMat image, float angle)
@@ -163,6 +164,15 @@ public:
 
             	      //imshow(CROPPED_WINDOW, ROI_cropped);
                	      //cv::waitKey(3);
+
+		      cv_bridge::CvImage img_bridge;
+		      sensor_msgs::Image img_msg;
+		      std_msgs::Header header;
+		      header.seq = ct;
+		      header.stamp = ros::Time::now();
+		      img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, ROI_cropped);
+		      img_bridge.toImageMsg(img_msg);
+		      image_pub_.publish(img_msg);
          	  }
 
 		  float ROI_center_x = cfaces[i].x + sz.width*0.5;
@@ -221,7 +231,7 @@ public:
 	  delay = ((double)getTickCount()-delay)/getTickFrequency();
           totaldelay += delay;
 
-	  image_pub_.publish(cv_ptr->toImageMsg());
+	  //image_pub_.publish(cv_ptr->toImageMsg());
 
 	  cout << "Face Detection fps: " << 1.0/(totalT/(double)frmCnt) << endl;
 //	  cout << "OpenCV delay: " << totaldelay << endl;
