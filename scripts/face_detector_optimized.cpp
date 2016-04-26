@@ -22,7 +22,12 @@ static const std::string CROPPED_WINDOW = "Face cropped";
 string face_cascade_name = "/home/ubuntu/haarcascades/GPU/haarcascade_frontalface_alt.xml";
 CascadeClassifier_GPU face_cascade;
 int ct = 0;
-int iter = 0;
+int iter = 10;
+Mat ROI_cropped;
+Mat cv_ptr_copy;
+Point pt1 = Point(7, 0);
+Point pt2;
+Size sz;
 
 class faceDetector
 {
@@ -52,14 +57,14 @@ public:
 	//cv::destroyWindow(CROPPED_WINDOW);
   }
 
-  int saveCroppedImg(Mat ROI_cropped, int ct)
+  int saveCroppedImg(Mat ROI_cropped, int ct, string title)
   {
 	stringstream ss;
 
-        string name = "/home/ubuntu/face_pictures/cropped_";
+        string name = "/home/ubuntu/face_pictures/";
         string type = ".jpg";
 
-        ss << name << ct <<type;
+        ss << name << title << ct << type;
 
         string filename = ss.str();
         ss.str("");
@@ -124,6 +129,114 @@ public:
   	return ROI_center;
   }
 
+
+std::string getImageType(int number)
+{
+    // find type
+    int imgTypeInt = number%8;
+    std::string imgTypeString;
+
+    switch (imgTypeInt)
+    {
+        case 0:
+            imgTypeString = "8U";
+            break;
+        case 1:
+            imgTypeString = "8S";
+            break;
+        case 2:
+            imgTypeString = "16U";
+            break;
+        case 3:
+            imgTypeString = "16S";
+            break;
+        case 4:
+            imgTypeString = "32S";
+            break;
+        case 5:
+            imgTypeString = "32F";
+            break;
+        case 6:
+            imgTypeString = "64F";
+            break;
+        default:
+            break;
+    }
+
+    // find channel
+    int channel = (number/8) + 1;
+
+    std::stringstream type;
+    type<<"CV_"<<imgTypeString<<"C"<<channel;
+
+    return type.str();
+}
+
+
+
+
+
+  void templateMatching(Mat ROI_cropped, Mat cv_ptr_copy, Point pt1)
+  {
+	int step = 0;
+
+	if (step < 10 && pt1.x != 0 && pt1.y != 0)
+	{
+	  Mat image = cv_ptr_copy;
+	  float scale_ratio = 0.6;
+
+	  int widthIncrease = scale_ratio*ROI_cropped.cols;
+	  int heightIncrease = scale_ratio*ROI_cropped.rows;
+
+	  Point searchROIpt1 = Point(pt1.x - widthIncrease*0.5, pt1.y - heightIncrease*0.5);
+	  Point searchROIpt2 = Point(searchROIpt1.x + ROI_cropped.cols + widthIncrease,
+					searchROIpt1.y + ROI_cropped.rows + heightIncrease);
+
+	  int frame_width;
+	  int frame_height;
+
+	  ros::param::get("/usb_cam/image_width", frame_width);
+          ros::param::get("/usb_cam/image_height", frame_height);
+
+	  if (searchROIpt1.x < 0) { searchROIpt1.x = 0; }
+	  if (searchROIpt1.y < 0) { searchROIpt1.y = 0; }
+	  if (searchROIpt1.x > frame_width) { searchROIpt1.x = frame_width; }
+	  if (searchROIpt1.y > frame_height) { searchROIpt1.y = frame_height; }
+
+          if (searchROIpt2.x < 0) { searchROIpt2.x = 0; }
+          if (searchROIpt2.y < 0) { searchROIpt2.y = 0; }
+          if (searchROIpt2.x > frame_width) { searchROIpt2.x = frame_width; }
+          if (searchROIpt2.y > frame_height) { searchROIpt2.y = frame_height; }
+
+	  Rect searchROI = Rect(searchROIpt1.x, searchROIpt1.y,
+				searchROIpt2.x - searchROIpt1.x, searchROIpt2.y - searchROIpt1.y);
+	  rectangle(cv_ptr_copy, searchROIpt1, searchROIpt2, Scalar(255,0,100), 1, 8, 0);
+
+	  Mat searchImage = image(searchROI);
+
+	  Mat matchingResult;
+	  matchingResult.create( image.rows, image.cols, CV_8UC3 );
+
+	  matchTemplate(searchImage, ROI_cropped, matchingResult, CV_TM_SQDIFF_NORMED);
+	  normalize(matchingResult, matchingResult, 0, 1, NORM_MINMAX, -1, Mat());
+	  double min, max;
+	  Point minLoc, maxLoc;
+	  minMaxLoc(matchingResult, &min, &max, &minLoc, &maxLoc);
+
+	  minLoc.x += pt1.x - widthIncrease*0.5;
+	  minLoc.y += pt1.y - heightIncrease*0.5;
+
+	  Point vertex1 = Point(minLoc.x, minLoc.y);
+	  Point vertex2 = Point(minLoc.x + ROI_cropped.cols, minLoc.y + ROI_cropped.rows);
+	  rectangle(cv_ptr_copy, vertex1, vertex2, Scalar(255));
+
+	  imshow( OPENCV_WINDOW, cv_ptr_copy );
+          cv::waitKey(3);
+
+	  step++;
+	}
+  }
+
   //subscriber callback function
   void callback(const sensor_msgs::ImageConstPtr& msg)
   {
@@ -145,9 +258,6 @@ public:
 	  return;
 	}
 
-	// Load cascades
-	if( !face_cascade.load( face_cascade_name ) ){ std::cout << "Error loading face cascade" << endl; };
-
 	// Get image frame and apply classifier
 	if (cv_ptr)
 	{
@@ -156,9 +266,11 @@ public:
 	  double t = (double)getTickCount();
 
 	  //create a copy of the image for the cropped window
-	  Mat cv_ptr_copy = cv_ptr->image.clone();
+	  cv_ptr_copy = cv_ptr->image.clone();
 
-          //std::vector<Rect> faces;
+	  //int a = saveCroppedImg(cv_ptr_copy, ct, "full_image");
+
+	  //std::vector<Rect> faces;
 	  GpuMat faces;
 	  Mat frame_gray;
 
@@ -168,15 +280,14 @@ public:
   	  equalizeHist( frame_gray, frame_gray );
 
 	  //catch every iter'th frame and detect number of faces identified
-	  if (iter == 0)
+	  if (iter == 10)
 	  {
-	  	iter = 0;
+	  	//iter = 0;
 	  	int detect_num = face_cascade.detectMultiScale(gray_gpu, faces, 1.1, 2, Size(30,30));
 
 	  	Mat obj_host;
 	  	faces.colRange(0, detect_num).download(obj_host);
 	  	Rect* cfaces = obj_host.ptr<Rect>();
-	  	Mat ROI_cropped;
 
 	  	//check how long it took
 	  	t=((double)getTickCount()-t)/getTickFrequency();
@@ -190,17 +301,17 @@ public:
 		//loop to draw ROI boxes
           	for( size_t i = 0; i < detect_num; i++ )
           	{
-		  Point pt1 = Point(cfaces[i].x, cfaces[i].y);
-		  Size sz = cfaces[i].size();
-		  Point pt2(pt1.x+sz.width, pt1.y+sz.height);
+		  pt1 = Point(cfaces[i].x, cfaces[i].y);
+		  sz = cfaces[i].size();
+		  pt2 = Point(pt1.x+sz.width, pt1.y+sz.height);
 
-		  Mat ROI_cropped = cv_ptr_copy(Rect(pt1.x, pt1.y, sz.width, sz.height));
+		  ROI_cropped = cv_ptr_copy(Rect(pt1.x, pt1.y, sz.width, sz.height));
 
 		  rectangle(cv_ptr->image, pt1, pt2, Scalar(255));
 
 		  if (ROI_cropped.empty() == false)
   	          {
-		    //ct = saveCroppedImg(ROI_cropped, ct);
+		    ct = saveCroppedImg(ROI_cropped, ct, "cropped_");
 
             	    //imshow(CROPPED_WINDOW, ROI_cropped);
                	    //cv::waitKey(3);
@@ -235,6 +346,8 @@ public:
 	  imshow( OPENCV_WINDOW, cv_ptr->image );
 	  cv::waitKey(3);
 
+	  templateMatching(ROI_cropped, cv_ptr_copy, pt1);
+
 	  //image_pub_.publish(cv_ptr->toImageMsg());
 
 	  cout << "Face Detection fps: " << 1.0/(totalT/(double)frmCnt) << endl;
@@ -252,6 +365,9 @@ int main(int argc, char** argv)
 	cout << "no CUDA device found" << endl;
 	return 0;
   }
+
+  // Load cascade
+  if( !face_cascade.load( face_cascade_name ) ){ std::cout << "Error loading face cascade" << endl; };
 
   faceDetector fd;
   ros::spin();
