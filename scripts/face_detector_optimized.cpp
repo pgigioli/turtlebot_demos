@@ -30,6 +30,9 @@ Size sz;
 int tryCascade = 1;
 int tryTemplateMatching = 0;
 int steps = 0;
+Point searchROIpt1;
+Point searchROIpt2;
+Rect searchROI;
 
 class faceDetector
 {
@@ -140,17 +143,17 @@ public:
 	int widthIncrease = scale_ratio*ROI_cropped.cols;
 	int heightIncrease = scale_ratio*ROI_cropped.rows;
 
-	Point searchROIpt1 = Point(pt1.x - widthIncrease*0.5, pt1.y - heightIncrease*0.5);
-	Point searchROIpt2 = Point(searchROIpt1.x + ROI_cropped.cols + widthIncrease,
-					searchROIpt1.y + ROI_cropped.rows + heightIncrease);
+	searchROIpt1 = Point(pt1.x - widthIncrease*0.5, pt1.y - heightIncrease*0.5);
+	searchROIpt2 = Point(searchROIpt1.x + ROI_cropped.cols + widthIncrease,
+				searchROIpt1.y + ROI_cropped.rows + heightIncrease);
 
 	int frame_width;
 	int frame_height;
 
 	ros::param::get("/usb_cam/image_width", frame_width);
         ros::param::get("/usb_cam/image_height", frame_height);
-
 	if (steps < 10 && pt1.x != 0 && pt1.y != 0)
+	//while (steps < 10 && pt1.x != 0 && pt1.y != 0)
         {
 	  if (searchROIpt1.x < 0) { searchROIpt1.x = 0; }
 	  if (searchROIpt1.y < 0) { searchROIpt1.y = 0; }
@@ -162,8 +165,8 @@ public:
           if (searchROIpt2.x > frame_width) { searchROIpt2.x = frame_width; }
           if (searchROIpt2.y > frame_height) { searchROIpt2.y = frame_height; }
 
-	  Rect searchROI = Rect(searchROIpt1.x, searchROIpt1.y,
-				searchROIpt2.x - searchROIpt1.x, searchROIpt2.y - searchROIpt1.y);
+	  searchROI = Rect(searchROIpt1.x, searchROIpt1.y,
+			searchROIpt2.x - searchROIpt1.x, searchROIpt2.y - searchROIpt1.y);
 	  rectangle(cv_ptr_copy, searchROIpt1, searchROIpt2, Scalar(255,0,100), 1, 8, 0);
 
 	  Mat searchImage = image(searchROI);
@@ -187,10 +190,10 @@ public:
 	  imshow( OPENCV_WINDOW, cv_ptr_copy );
           cv::waitKey(3);
 
-	  searchROIpt1.x = vertex1.x - widthIncrease*0.5;
-	  searchROIpt1.y = vertex1.y - heightIncrease*0.5;
-	  searchROIpt2.x = vertex2.x + widthIncrease*0.5;
-	  searchROIpt2.y = vertex2.y + heightIncrease*0.5;
+          pt1.x = vertex1.x - widthIncrease*0.5;
+          pt1.y = vertex1.y - heightIncrease*0.5;
+          pt2.x = vertex2.x + widthIncrease*0.5;
+          pt2.y = vertex2.y + heightIncrease*0.5;
 
 	  steps++;
 	}
