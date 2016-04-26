@@ -22,12 +22,14 @@ static const std::string CROPPED_WINDOW = "Face cropped";
 string face_cascade_name = "/home/ubuntu/haarcascades/GPU/haarcascade_frontalface_alt.xml";
 CascadeClassifier_GPU face_cascade;
 int ct = 0;
-int iter = 10;
 Mat ROI_cropped;
 Mat cv_ptr_copy;
-Point pt1 = Point(7, 0);
+Point pt1;
 Point pt2;
 Size sz;
+int tryCascade = 1;
+int tryTemplateMatching = 0;
+int steps = 0;
 
 class faceDetector
 {
@@ -87,7 +89,8 @@ public:
         image_pub_.publish(img_msg);
   }
 
-  cv_bridge::CvImagePtr drawCenterZone(cv_bridge::CvImagePtr cv_ptr)
+  //cv_bridge::CvImagePtr drawCenterZone(cv_bridge::CvImagePtr cv_ptr)
+  Mat drawCenterZone(Mat cv_ptr_copy)
   {
 	int image_width;
         int image_height;
@@ -99,9 +102,9 @@ public:
         float zone_y_min = (image_height * 0.5) - (image_height * 0.25 * 0.5);
         float zone_y_max = (image_height * 0.5) + (image_height * 0.25 * 0.5);
 
-        rectangle(cv_ptr->image, Point(zone_x_min, zone_y_min),
+        rectangle(cv_ptr_copy, Point(zone_x_min, zone_y_min),
                    Point(zone_x_max, zone_y_max), Scalar(255,0,255));
-	return cv_ptr;
+	return cv_ptr_copy;
   }
 
   geometry_msgs::Point setCenterPoint(float ROI_center_x, float ROI_center_y,
@@ -129,75 +132,26 @@ public:
   	return ROI_center;
   }
 
-
-std::string getImageType(int number)
-{
-    // find type
-    int imgTypeInt = number%8;
-    std::string imgTypeString;
-
-    switch (imgTypeInt)
-    {
-        case 0:
-            imgTypeString = "8U";
-            break;
-        case 1:
-            imgTypeString = "8S";
-            break;
-        case 2:
-            imgTypeString = "16U";
-            break;
-        case 3:
-            imgTypeString = "16S";
-            break;
-        case 4:
-            imgTypeString = "32S";
-            break;
-        case 5:
-            imgTypeString = "32F";
-            break;
-        case 6:
-            imgTypeString = "64F";
-            break;
-        default:
-            break;
-    }
-
-    // find channel
-    int channel = (number/8) + 1;
-
-    std::stringstream type;
-    type<<"CV_"<<imgTypeString<<"C"<<channel;
-
-    return type.str();
-}
-
-
-
-
-
   void templateMatching(Mat ROI_cropped, Mat cv_ptr_copy, Point pt1)
   {
-	int step = 0;
+	Mat image = cv_ptr_copy;
+	float scale_ratio = 0.6;
 
-	if (step < 10 && pt1.x != 0 && pt1.y != 0)
-	{
-	  Mat image = cv_ptr_copy;
-	  float scale_ratio = 0.6;
+	int widthIncrease = scale_ratio*ROI_cropped.cols;
+	int heightIncrease = scale_ratio*ROI_cropped.rows;
 
-	  int widthIncrease = scale_ratio*ROI_cropped.cols;
-	  int heightIncrease = scale_ratio*ROI_cropped.rows;
-
-	  Point searchROIpt1 = Point(pt1.x - widthIncrease*0.5, pt1.y - heightIncrease*0.5);
-	  Point searchROIpt2 = Point(searchROIpt1.x + ROI_cropped.cols + widthIncrease,
+	Point searchROIpt1 = Point(pt1.x - widthIncrease*0.5, pt1.y - heightIncrease*0.5);
+	Point searchROIpt2 = Point(searchROIpt1.x + ROI_cropped.cols + widthIncrease,
 					searchROIpt1.y + ROI_cropped.rows + heightIncrease);
 
-	  int frame_width;
-	  int frame_height;
+	int frame_width;
+	int frame_height;
 
-	  ros::param::get("/usb_cam/image_width", frame_width);
-          ros::param::get("/usb_cam/image_height", frame_height);
+	ros::param::get("/usb_cam/image_width", frame_width);
+        ros::param::get("/usb_cam/image_height", frame_height);
 
+	if (steps < 10 && pt1.x != 0 && pt1.y != 0)
+        {
 	  if (searchROIpt1.x < 0) { searchROIpt1.x = 0; }
 	  if (searchROIpt1.y < 0) { searchROIpt1.y = 0; }
 	  if (searchROIpt1.x > frame_width) { searchROIpt1.x = frame_width; }
@@ -233,16 +187,101 @@ std::string getImageType(int number)
 	  imshow( OPENCV_WINDOW, cv_ptr_copy );
           cv::waitKey(3);
 
-	  step++;
+	  searchROIpt1.x = vertex1.x - widthIncrease*0.5;
+	  searchROIpt1.y = vertex1.y - heightIncrease*0.5;
+	  searchROIpt2.x = vertex2.x + widthIncrease*0.5;
+	  searchROIpt2.y = vertex2.y + heightIncrease*0.5;
+
+	  steps++;
 	}
+	else
+	{
+	  steps = 0;
+	  tryTemplateMatching = 0;
+	  tryCascade = 1;
+	}
+  }
+
+  void cascadeClassifier(Mat cv_ptr_copy)
+  {
+          GpuMat faces;
+          Mat frame_gray;
+
+          cvtColor( cv_ptr_copy, frame_gray, CV_BGR2GRAY );
+
+          GpuMat gray_gpu(frame_gray);
+          equalizeHist( frame_gray, frame_gray );
+
+          int detect_num = face_cascade.detectMultiScale(gray_gpu, faces, 1.1, 2, Size(30,30));
+
+	  if (detect_num == 0)
+	  {
+	    tryCascade = 0;
+	    tryTemplateMatching = 1;
+	  }
+	  else
+	  {
+	    tryCascade = 1;
+	    tryTemplateMatching = 0;
+	  }
+
+          Mat obj_host;
+          faces.colRange(0, detect_num).download(obj_host);
+          Rect* cfaces = obj_host.ptr<Rect>();
+
+          float ROI_center_x;
+          float ROI_center_y;
+          int face_exists = 0;
+
+          //loop to draw ROI boxes
+          for( size_t i = 0; i < detect_num; i++ )
+          {
+	    pt1 = Point(cfaces[i].x, cfaces[i].y);
+            sz = cfaces[i].size();
+            pt2 = Point(pt1.x+sz.width, pt1.y+sz.height);
+
+            ROI_cropped = cv_ptr_copy(Rect(pt1.x, pt1.y, sz.width, sz.height));
+
+            rectangle(cv_ptr_copy, pt1, pt2, Scalar(255));
+
+            if (ROI_cropped.empty() == false)
+            {
+		ct = saveCroppedImg(ROI_cropped, ct, "cropped_");
+                //imshow(CROPPED_WINDOW, ROI_cropped);
+                //cv::waitKey(3);
+
+                publishCroppedImg(ROI_cropped);
+            }
+
+            float ROI_center_x = cfaces[i].x + sz.width*0.5;
+            float ROI_center_y = cfaces[i].y + sz.height*0.5;
+
+            face_exists = 1;
+
+            // define center zone for face tracking
+            drawCenterZone(cv_ptr_copy);
+	  }
+
+          // Handle multiple faces by placing the center point at the mean of all ROIs
+          geometry_msgs::Point ROI_center = setCenterPoint(ROI_center_x, ROI_center_y,
+                                                                cfaces, detect_num);
+
+          Point face_center(ROI_center.x, ROI_center.y);
+          circle(cv_ptr_copy, face_center, 2, Scalar(255,0,255), 2, 8, 0 );
+
+          if (face_exists == 1)
+          {
+            face_exists = 0;
+            ROI_coordinate_pub_.publish(ROI_center);
+          }
+
+          imshow( OPENCV_WINDOW, cv_ptr_copy );
+          cv::waitKey(3);
   }
 
   //subscriber callback function
   void callback(const sensor_msgs::ImageConstPtr& msg)
   {
-	//iter++;
-	//cout << iter << endl;
-
 	double delay = (double)getTickCount();
         double totaldelay = 0.0;
 
@@ -261,6 +300,7 @@ std::string getImageType(int number)
 	// Get image frame and apply classifier
 	if (cv_ptr)
 	{
+	  //start timer
 	  long frmCnt = 0;
 	  double totalT = 0.0;
 	  double t = (double)getTickCount();
@@ -270,83 +310,15 @@ std::string getImageType(int number)
 
 	  //int a = saveCroppedImg(cv_ptr_copy, ct, "full_image");
 
-	  //std::vector<Rect> faces;
-	  GpuMat faces;
-	  Mat frame_gray;
+	  //call cascade face detector
+	  if (tryCascade == 1) { cascadeClassifier(cv_ptr_copy); }
 
-  	  cvtColor( cv_ptr->image, frame_gray, CV_BGR2GRAY );
+	  //check how long it took
+	  t=((double)getTickCount()-t)/getTickFrequency();
+          totalT += t;
+          frmCnt++;
 
-	  GpuMat gray_gpu(frame_gray);
-  	  equalizeHist( frame_gray, frame_gray );
-
-	  //catch every iter'th frame and detect number of faces identified
-	  if (iter == 10)
-	  {
-	  	//iter = 0;
-	  	int detect_num = face_cascade.detectMultiScale(gray_gpu, faces, 1.1, 2, Size(30,30));
-
-	  	Mat obj_host;
-	  	faces.colRange(0, detect_num).download(obj_host);
-	  	Rect* cfaces = obj_host.ptr<Rect>();
-
-	  	//check how long it took
-	  	t=((double)getTickCount()-t)/getTickFrequency();
-          	totalT += t;
-          	frmCnt++;
-
-	  	float ROI_center_x;
-	  	float ROI_center_y;
-	  	int face_exists = 0;
-
-		//loop to draw ROI boxes
-          	for( size_t i = 0; i < detect_num; i++ )
-          	{
-		  pt1 = Point(cfaces[i].x, cfaces[i].y);
-		  sz = cfaces[i].size();
-		  pt2 = Point(pt1.x+sz.width, pt1.y+sz.height);
-
-		  ROI_cropped = cv_ptr_copy(Rect(pt1.x, pt1.y, sz.width, sz.height));
-
-		  rectangle(cv_ptr->image, pt1, pt2, Scalar(255));
-
-		  if (ROI_cropped.empty() == false)
-  	          {
-		    ct = saveCroppedImg(ROI_cropped, ct, "cropped_");
-
-            	    //imshow(CROPPED_WINDOW, ROI_cropped);
-               	    //cv::waitKey(3);
-
-		    publishCroppedImg(ROI_cropped);
-         	  }
-
-		  float ROI_center_x = cfaces[i].x + sz.width*0.5;
-		  float ROI_center_y = cfaces[i].y + sz.height*0.5;
-
-		  face_exists = 1;
-
-		  // define center zone for face tracking
-		  drawCenterZone(cv_ptr);
-          	}
-
-	  	// Handle multiple faces by placing the center point at the mean of all ROIs
-	  	geometry_msgs::Point ROI_center = setCenterPoint(ROI_center_x, ROI_center_y,
-								cfaces, detect_num);
-
-	  	Point face_center(ROI_center.x, ROI_center.y);
-	  	circle(cv_ptr->image, face_center, 2, Scalar(255,0,255), 2, 8, 0 );
-
-	  	if (face_exists == 1)
-	  	{
-		  face_exists = 0;
-		  ROI_coordinate_pub_.publish(ROI_center);
-	  	}
-	  }
-
-	  //-- Show what you got
-	  imshow( OPENCV_WINDOW, cv_ptr->image );
-	  cv::waitKey(3);
-
-	  templateMatching(ROI_cropped, cv_ptr_copy, pt1);
+	  if (tryTemplateMatching == 1) { templateMatching(ROI_cropped, cv_ptr_copy, pt1); }
 
 	  //image_pub_.publish(cv_ptr->toImageMsg());
 
