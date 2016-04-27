@@ -21,10 +21,10 @@ void callback(const geometry_msgs::Point::ConstPtr& msg)
   ros::param::get("/usb_cam/image_width", image_width);
   ros::param::get("/usb_cam/image_height", image_height);
 
-  float zone_x_min = (image_width * 0.5) - (image_width * 0.25 * 0.5);
-  float zone_x_max = (image_width * 0.5) + (image_width * 0.25 * 0.5);
-  float zone_y_min = (image_height * 0.5) - (image_height * 0.25 * 0.5);
-  float zone_y_max = (image_height * 0.5) + (image_height * 0.25 * 0.5);
+  float zone_x_min = (image_width * 0.5) - (image_width * 0.4 * 0.5);
+  float zone_x_max = (image_width * 0.5) + (image_width * 0.4 * 0.5);
+  float zone_y_min = (image_height * 0.5) - (image_height * 0.4 * 0.5);
+  float zone_y_max = (image_height * 0.5) + (image_height * 0.4 * 0.5);
 
   float delay = 0.1;
 

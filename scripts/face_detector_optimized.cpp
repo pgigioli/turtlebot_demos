@@ -97,13 +97,15 @@ public:
   {
 	int image_width;
         int image_height;
+	float scale = 0.40;
+
         ros::param::get("/usb_cam/image_width", image_width);
         ros::param::get("/usb_cam/image_height", image_height);
 
-        float zone_x_min = (image_width * 0.5) - (image_width * 0.25 * 0.5);
-        float zone_x_max = (image_width * 0.5) + (image_width * 0.25 * 0.5);
-        float zone_y_min = (image_height * 0.5) - (image_height * 0.25 * 0.5);
-        float zone_y_max = (image_height * 0.5) + (image_height * 0.25 * 0.5);
+        float zone_x_min = (image_width * 0.5) - (image_width * scale * 0.5);
+        float zone_x_max = (image_width * 0.5) + (image_width * scale * 0.5);
+        float zone_y_min = (image_height * 0.5) - (image_height * scale * 0.5);
+        float zone_y_max = (image_height * 0.5) + (image_height * scale * 0.5);
 
         rectangle(cv_ptr_copy, Point(zone_x_min, zone_y_min),
                    Point(zone_x_max, zone_y_max), Scalar(255,0,255));
@@ -135,10 +137,36 @@ public:
   	return ROI_center;
   }
 
+  void set_pt1(float x, float y)
+  {
+	pt1 = Point(x, y);
+  }
+
+  void set_pt2(float x, float y)
+  {
+	pt2 = Point(x, y);
+  }
+
+  Mat getFaceTemplate(Mat ROI_cropped)
+  {
+	Size ROIsize = ROI_cropped.size();
+	int ROIwidth = ROIsize.width;
+	int ROIheight = ROIsize.height;
+	int newFacex = ROIwidth * 0.25;
+	int newFacey = ROIheight * 0.25;
+	int newFaceWidth = ROIwidth * 0.5;
+	int newFaceHeight = ROIheight * 0.5;
+
+	Rect newFace = Rect(newFacex, newFacey, newFaceWidth, newFaceHeight);
+
+	Mat faceTemplate = ROI_cropped(newFace);
+	return faceTemplate;
+  }
+
   void templateMatching(Mat ROI_cropped, Mat cv_ptr_copy, Point pt1)
   {
 	Mat image = cv_ptr_copy;
-	float scale_ratio = 0.6;
+	float scale_ratio = 0.25;
 
 	int widthIncrease = scale_ratio*ROI_cropped.cols;
 	int heightIncrease = scale_ratio*ROI_cropped.rows;
@@ -152,8 +180,7 @@ public:
 
 	ros::param::get("/usb_cam/image_width", frame_width);
         ros::param::get("/usb_cam/image_height", frame_height);
-	if (steps < 10 && pt1.x != 0 && pt1.y != 0)
-	//while (steps < 10 && pt1.x != 0 && pt1.y != 0)
+	if (steps < 10 && pt1.x > 0 && pt1.y > 0)
         {
 	  if (searchROIpt1.x < 0) { searchROIpt1.x = 0; }
 	  if (searchROIpt1.y < 0) { searchROIpt1.y = 0; }
@@ -166,34 +193,46 @@ public:
           if (searchROIpt2.y > frame_height) { searchROIpt2.y = frame_height; }
 
 	  searchROI = Rect(searchROIpt1.x, searchROIpt1.y,
-			searchROIpt2.x - searchROIpt1.x, searchROIpt2.y - searchROIpt1.y);
-	  rectangle(cv_ptr_copy, searchROIpt1, searchROIpt2, Scalar(255,0,100), 1, 8, 0);
+	  		searchROIpt2.x - searchROIpt1.x, searchROIpt2.y - searchROIpt1.y);
+	  rectangle(cv_ptr_copy, searchROIpt1, searchROIpt2, Scalar(0,255,0), 1, 8, 0);
 
 	  Mat searchImage = image(searchROI);
+	  Mat faceTemplate = getFaceTemplate(ROI_cropped);
 
 	  Mat matchingResult;
 	  matchingResult.create( image.rows, image.cols, CV_8UC3 );
 
-	  matchTemplate(searchImage, ROI_cropped, matchingResult, CV_TM_SQDIFF_NORMED);
+	  matchTemplate(searchImage, faceTemplate, matchingResult, CV_TM_SQDIFF_NORMED);
 	  normalize(matchingResult, matchingResult, 0, 1, NORM_MINMAX, -1, Mat());
 	  double min, max;
 	  Point minLoc, maxLoc;
 	  minMaxLoc(matchingResult, &min, &max, &minLoc, &maxLoc);
 
-	  minLoc.x += pt1.x - widthIncrease*0.5;
-	  minLoc.y += pt1.y - heightIncrease*0.5;
+Size temp_size = ROI_cropped.size();
+
+	  minLoc.x += pt1.x - widthIncrease*0.5 - temp_size.width*0.25;
+	  minLoc.y += pt1.y - heightIncrease*0.5 - temp_size.height*0.25;;
 
 	  Point vertex1 = Point(minLoc.x, minLoc.y);
 	  Point vertex2 = Point(minLoc.x + ROI_cropped.cols, minLoc.y + ROI_cropped.rows);
 	  rectangle(cv_ptr_copy, vertex1, vertex2, Scalar(255));
 
+	  drawCenterZone(cv_ptr_copy);
+
+	  Point templateMatchingCenter = Point(vertex1.x + ROI_cropped.cols*0.5, vertex1.y + ROI_cropped.rows*0.5);
+	  geometry_msgs::Point faceTrackingPoint;
+	  faceTrackingPoint.x = templateMatchingCenter.x;
+	  faceTrackingPoint.y = templateMatchingCenter.y;
+
+	  circle(cv_ptr_copy, templateMatchingCenter, 2, Scalar(255,0,255), 2, 8, 0 );
+
+	  ROI_coordinate_pub_.publish(faceTrackingPoint);
+
 	  imshow( OPENCV_WINDOW, cv_ptr_copy );
           cv::waitKey(3);
 
-          pt1.x = vertex1.x - widthIncrease*0.5;
-          pt1.y = vertex1.y - heightIncrease*0.5;
-          pt2.x = vertex2.x + widthIncrease*0.5;
-          pt2.y = vertex2.y + heightIncrease*0.5;
+	  set_pt1(vertex1.x, vertex1.y);
+	  set_pt2(vertex2.x, vertex2.y);
 
 	  steps++;
 	}
