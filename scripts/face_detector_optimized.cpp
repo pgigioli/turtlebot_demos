@@ -249,8 +249,9 @@ public:
 
 	  // add smoother to ROI movement.  If the new ROI coordinates move too much
 	  // limit their new location to a small buffer
-	  if ((minLoc.x - pt1.x) > 20) {minLoc.x = pt1.x + 20;}
-	  if ((minLoc.y - pt1.y) > 20) {minLoc.y = pt1.y + 20;}
+	  float movement_buffer = 15;
+	  if ((minLoc.x - pt1.x) > movement_buffer) {minLoc.x = pt1.x + movement_buffer;}
+	  if ((minLoc.y - pt1.y) > movement_buffer) {minLoc.y = pt1.y + movement_buffer;}
 
 	  // draw new boundary around estimate face position
 	  Point vertex1 = Point(minLoc.x, minLoc.y);
@@ -416,15 +417,13 @@ public:
 	  // call cascade face classifier
 	  if (tryCascade == 1) { cascadeClassifier(cv_ptr_copy); }
 
-	  //check how long it took for cascade classifier
-	  t=((double)getTickCount()-t)/getTickFrequency();
-          totalT += t;
-          frmCnt++;
-
 	  // call template matching
 	  if (tryTemplateMatching == 1) { templateMatching(ROI_cropped, cv_ptr_copy, pt1); }
 
-	  //image_pub_.publish(cv_ptr->toImageMsg());
+	  // check how long the face detector took
+          t=((double)getTickCount()-t)/getTickFrequency();
+          totalT += t;
+          frmCnt++;
 
 	  cout << "Face Detection fps: " << 1.0/(totalT/(double)frmCnt) << endl;
 	}
