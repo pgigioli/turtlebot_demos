@@ -18,7 +18,7 @@ using namespace cv::gpu;
 
 static const std::string OPENCV_WINDOW = "Face detection with GPU support";
 static const std::string CROPPED_WINDOW = "Face cropped";
-string face_cascade_name = "/home/ubuntu/haarcascades/GPU/haarcascade_frontalface_alt.xml";
+string face_cascade_name = "/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/GPU/haarcascade_frontalface_alt.xml";
 CascadeClassifier_GPU face_cascade;
 int ct = 0;
 

@@ -19,7 +19,7 @@ using namespace cv::gpu;
 // define global variables
 static const std::string OPENCV_WINDOW = "Face detection with GPU support";
 static const std::string CROPPED_WINDOW = "Face cropped";
-string face_cascade_name = "/home/ubuntu/haarcascades/GPU/haarcascade_frontalface_alt.xml";
+string face_cascade_name = "/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/GPU/haarcascade_frontalface_alt.xml";
 CascadeClassifier_GPU face_cascade;
 int ct = 0;
 Mat ROI_cropped;
@@ -162,7 +162,7 @@ public:
   // check if template matching is failing or not
   int checkThreshold(Mat matchingResult)
   {
-	float threshold = 0.3;
+	float threshold = 0.4;
 	double minCheck, maxCheck;
 	Point minLocCheck, maxLocCheck;
         minMaxLoc(matchingResult, &minCheck, &maxCheck, &minLocCheck, &maxLocCheck);

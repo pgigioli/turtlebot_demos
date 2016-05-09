@@ -13,9 +13,9 @@ using namespace std;
 using namespace cv;
 
 static const std::string OPENCV_WINDOW = "Face detection with CPU support";
-string face_cascade_name = "/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml";
-//string profile_cascade_name = "/home/ubuntu/haarcascades/haarcascade_profileface.xml";
-//string eyes_cascade_name = "/home/ubuntu/haarcascades/haarcascade_eye.xml";
+string face_cascade_name = "/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_frontalface_default.xml";
+//string profile_cascade_name = "/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_profileface.xml";
+//string eyes_cascade_name = "/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_eye.xml";
 CascadeClassifier face_cascade;
 CascadeClassifier profile_cascade;
 CascadeClassifier eyes_cascade;

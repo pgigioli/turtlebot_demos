@@ -12,16 +12,10 @@ from cv_bridge import CvBridge, CvBridgeError
 class face_detector:
 
 	def __init__(self):
-		self.face_cascade = cv2.CascadeClassifier('/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml')
-		#self.profile_cascade = cv2.CascadeClassifier('/home/ubuntu/haarcascades/haarcascade_profileface.xml') 
-		#self.eye_cascade = cv2.CascadeClassifier('/home/ubuntu/haarcascades/haarcascade_eye.xml') 
+		self.face_cascade = cv2.CascadeClassifier('/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_frontalface_default.xml')
+		#self.profile_cascade = cv2.CascadeClassifier('/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_profileface.xml') 
+		#self.eye_cascade = cv2.CascadeClassifier('/home/ubuntu/catkin_ws/src/turtlebot_demos/haarcascades/haarcascade_eye.xml') 
 		
-		#self.cv2gpu = cv2gpu
-		#if self.cv2gpu.is_cuda_compatible():
-    		#	self.cv2gpu.init_gpu_detector('/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml')
-		#else:
-    		#	self.cv2gpu.init_cpu_detector('/home/ubuntu/haarcascades/haarcascade_frontalface_default.xml')
-	
 		self.image_pub = rospy.Publisher("faceDetection",Image)
 		self.image_sub = rospy.Subscriber("/usb_cam/image_raw",Image,self.callback)
 		self.bridge = CvBridge()
