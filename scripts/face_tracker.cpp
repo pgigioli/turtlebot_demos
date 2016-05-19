@@ -168,8 +168,9 @@ private:
 	if (pan_angle < pan_min) { pan_angle = pan_min; }
 
 	publishCamAngles(pan_angle, tilt_angle);
-cout << "pan: " << pan_angle << endl;
-cout << "tilt: " << tilt_angle << endl;
+
+	cout << "pan: " << pan_angle << endl;
+	cout << "tilt: " << tilt_angle << endl;
    	}
   }
 };
