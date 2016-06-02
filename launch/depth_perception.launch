@@ -1,0 +1,11 @@
+<launch>
+
+  <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
+  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch" />
+
+  <node name="pan_tilt_control" pkg="turtlebot_demos" type="pan_tilt_control" output="screen" launch-prefix="xterm -e" />
+  <node pkg="depth2cam" type="dummy_cam_angles" name="dummy_cam_angles" />
+  <node pkg="depth2cam" type="webcam_tf_broadcaster" name="webcam_tf_broadcaster" />
+  <node pkg="depth2cam" type="depth2cam_projection" name="depth2cam_projection" />
+
+</launch>
