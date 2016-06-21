@@ -8,8 +8,11 @@
 
 using namespace std;
 
-float pan_angle = 0;
-float tilt_angle = 0;
+float PAN_ZERO = 0.0;
+float TILT_ZERO = -5.0;
+
+float pan_angle = PAN_ZERO;
+float tilt_angle = TILT_ZERO;
 float pan_max = 4480/47.41; float pan_min = -4480/47.41;
 float tilt_max = 1920/37.65; float tilt_min = -1920/37.65;
 float panIncr = 237/47.41; // 5 degrees
@@ -38,14 +41,14 @@ int main (int argc, char **argv)
 
   	if (key == "o")
   	{
-	  pan_angle = 0;
+	  pan_angle = PAN_ZERO;
 	  string command = "uvcdynctrl -s \"Pan Reset\" 1";
 	  system(command.c_str());
   	}
 
   	if (key == "u")
   	{
-	  tilt_angle = 0;
+	  tilt_angle = TILT_ZERO;
 	  string command = "uvcdynctrl -s \"Tilt Reset\" 1";
 	  system(command.c_str());
   	}

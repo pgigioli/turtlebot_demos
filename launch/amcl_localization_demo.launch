@@ -8,8 +8,8 @@
 
   <include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
 
-  <include file="$(find kobuki_auto_docking)/launch/coffeebot.launch"/>
-
+<!--  <include file="$(find kobuki_auto_docking)/launch/coffeebot.launch"/>
+-->
   <node name="get_pose" pkg="turtlebot_demos" type="get_pose" output="screen" launch-prefix="xterm -e" />
   <node name="set_pose" pkg="turtlebot_demos" type="set_pose" output="screen" launch-prefix="xterm -e" />
   <node name="autodocking" pkg="turtlebot_demos" type="autodocking.py" output="screen" launch-prefix="xterm -e" /> 

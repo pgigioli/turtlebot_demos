@@ -1,0 +1,96 @@
+<launch>
+
+<!-- move_base parameters -->
+  <param name="/move_base/controller_frequency" value="5.0"/>
+  <param name="/move_base/controller_patience" value="3.0"/>
+  <param name="/move_base/planner_frequency" value="1.0"/>
+  <param name="/move_base/planner_patience" value="5.0"/>
+  <param name="/move_base/oscillation_timeout" value="10.0"/>
+  <param name="/move_base/oscillation_distance" value="0.2"/>
+
+<!-- move_base DWA Planner parameters -->
+  <param name="/move_base/DWAPlannerROS/max_vel_x" value="0.3"/> 
+  <param name="/move_base/DWAPlannerROS/min_vel_x" value="-0.1"/>
+  <param name="/move_base/DWAPlannerROS/acc_lim_x" value="0.5"/>
+  
+  <param name="/move_base/DWAPlannerROS/yaw_goal_tolerance" value="0.1"/> <!-- angular tolerance in radians when achieving goal -->
+  <param name="/move_base/DWAPlannerROS/xy_goal_tolerance" value="0.2"/> <!-- tolerance in meters in xy distance to goal -->
+  
+  <param name="/move_base/DWAPlannerROS/sim_time" value="1.5"/> <!-- time spent to forward-simulate trajectories in seconds -->
+  <param name="/move_base/DWAPlannerROS/vx_samples" value="6"/> <!-- samples used when exploring x velocity space -->
+  <param name="/move_base/DWAPlannerROS/vtheta_samples" value="20"/> <!-- samples used when exploring theta velocity space -->
+  
+  <param name="/move_base/DWAPlannerROS/path_distance_bias" value="2.0"/> <!-- weighting to stay close to path it was given -->
+  <param name="/move_base/DWAPlannerROS/goal_distance_bias" value="1.0"/> <!-- weighting to attempt to reach its local goal -->
+  <param name="/move_base/DWAPlannerROS/occdist_scale" value="0.05"/> <!-- weighting to avoid obstacles -->
+  <param name="/move_base/DWAPlannerROS/forward_point_distance" value="0.325"/> <!-- distance from center point of robot to place additional scoring point, in meters -->
+  <param name="/move_base/DWAPlannerROS/stop_time_buffer" value="0.2"/> <!-- amount of time to stop before collision in order for trajectory to be considered valid -->
+  <param name="/move_base/DWAPlannerROS/scaling_speed" value="0.25"/>
+  <param name="/move_base/DWAPlannerROS/max_scaling_factor" value="0.75"/>
+  <param name="/move_base/DWAPlannerROS/penalize_negative_x" value="true"/>
+  <param name="/move_base/DWAPlannerROS/oscillation_reset_dist" value="0.05"/>
+
+<!-- move_base navfn global planner parameters -->
+  <param name="/move_base/NavfnROS/allow_unknown" value="true"/>
+  <param name="/move_base/NavfnROS/default_tolerance" value="0.75"/>
+
+<!-- move_base local costmap parameters -->
+  <param name="/move_base/local_costmap/update_frequency" value="5.0"/>
+  <param name="/move_base/local_costmap/publish_frequency" value="4.0"/>
+  <param name="/move_base/local_costmap/resolution" value="0.05"/>
+
+<!-- move_base global costmap parameters -->
+  <param name="/move_base/global_costmap/update_frequency" value="3.0"/>
+  <param name="/move_base/global_costmap/publish_frequency" value="2.0"/>
+  <param name="/move_base/global_costmap/transform_tolerance" value="0.5"/>
+  <param name="/move_base/global_costmap/resolution" value="0.05"/>
+
+<!-- slam_gmapping parameters -->
+  <param name="/slam_gmapping/angularUpdate" value="0.1"/> <!-- *** -->
+  <param name="/slam_gmapping/astep" value="0.05"/>
+  <param name="/slam_gmapping/base_frame" value="base_footprint"/>
+  <param name="/slam_gmapping/delta" value="0.05"/> <!-- *** -->
+  <param name="/slam_gmapping/iterations" value="5"/>
+  <param name="/slam_gmapping/kernelSize" value="1"/>
+  <param name="/slam_gmapping/lasamplerange" value="0.005"/>
+  <param name="/slam_gmapping/lasamplestep" value="0.005"/>
+  <param name="/slam_gmapping/linearUpdate" value="0.1"/> <!-- *** -->
+  <param name="/slam_gmapping/llsamplerange" value="0.01"/>
+  <param name="/slam_gmapping/llsamplestep" value="0.01"/>
+  <param name="/slam_gmapping/lsigma" value="0.075"/>
+  <param name="/slam_gmapping/lskip" value="0"/>
+  <param name="/slam_gmapping/lstep" value="0.05"/>
+  <param name="/slam_gmapping/map_update_interval" value="0.1"/> <!-- *** -->
+  <param name="/slam_gmapping/maxRange" value="6.0"/>
+  <param name="/slam_gmapping/maxUrange" value="4.0"/>
+  <param name="/slam_gmapping/minimumScore" value="7000"/> <!-- *** -->
+  <param name="/slam_gmapping/odom_frame" value="odom"/>
+  <param name="/slam_gmapping/ogain" value="3.0"/>
+  <param name="/slam_gmapping/particles" value="10"/> <!-- *** -->
+  <param name="/slam_gmapping/resampleThreshold" value="0.5"/>
+  <param name="/slam_gmapping/sigma" value="0.05"/>
+  <param name="/slam_gmapping/srr" value="0.01"/> <!-- 0.01 -->
+  <param name="/slam_gmapping/srt" value="0.01"/> <!-- 0.02 -->
+  <param name="/slam_gmapping/str" value="0.01"/> <!-- 0.01 -->
+  <param name="/slam_gmapping/stt" value="0.01"/> <!-- 0.01 -->
+  <param name="/slam_gmapping/temporalUpdate" value="-1.0"/> <!-- *** -->
+  <param name="/slam_gmapping/xmax" value="12.0"/>
+  <param name="/slam_gmapping/xmin" value="-12.0"/>
+  <param name="/slam_gmapping/ymax" value="12.0"/>
+  <param name="/slam_gmapping/ymin" value="-12.0"/>
+
+<!-- frontier_exploration explore server -->
+  <param name="/explore_server/explore_costmap/inflation/inflation_radius" value="0.3"/>
+  <param name="/explore_server/explore_costmap/publish_frequency" value="2.0"/>
+  <param name="/explore_server/explore_costmap/resolution" value="0.05"/>
+  <param name="/explore_server/explore_costmap/sensor/laser/obstacle_range" value="4.0"/>
+  <param name="/explore_server/explore_costmap/sensor/laser/raytrace_range" value="4.0"/>
+  <param name="/explore_server/explore_costmap/transform_tolerancs" value="0.5"/>
+  <param name="/explore_server/explore_costmap/update_frequency" value="2.0"/>
+  <param name="/explore_server/frequency" value="2.0"/>
+  <param name="/explore_server/goal_aliasing" value="2.0"/>
+
+  <param name="/depthimage_to_laserscan/range_min" value = "0.3"/>
+  <param name="/depthimage_to_laserscan/scan_height" value = "80"/>
+
+</launch>

@@ -3,19 +3,14 @@
   <include file="$(find turtlebot_bringup)/launch/minimal.launch" /> 
 
   <include file="$(find turtlebot_navigation)/launch/gmapping_demo.launch" /> 
-<!--
-  <include file="$(find hector_mapping)/launch/mapping_default.launch" />
 
-  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch">
-    <arg name="rgb_processing" value="false" />
-    <arg name="depth_registration" value="false" />
-    <arg name="depth_processing" value="false" />
-    <arg name="scan_topic" value="/scan" />
-  </include>
+  <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
 
-  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml"/>
--->
-  <include file="$(find frontier_exploration)/launch/global_map.launch" />
+  <node name="yolo_face_detector" pkg="darknet_ros" type="yolo_face_detector" />
+
+  <node name="base2cambase_tf_broadcaster" pkg="depth2cam" type="base2cambase_tf_broadcaster" />
+
+  <include file="$(find frontier_exploration)/launch/object_search.launch" />
 
   <node name="send_exploration_goal" pkg="turtlebot_demos" type="send_exploration_goal" output="screen" launch-prefix="xterm -e">
     <param name="start_linear_vel" value="0.25" />
@@ -26,5 +21,7 @@
   </node>
 
   <include file="$(find turtlebot_demos)/launch/nav_params.launch.xml" />
+
+  <param name="/move_base/DWAPlannerROS/max_vel_x" value="0.2"/>
 
 </launch>

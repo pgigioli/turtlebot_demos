@@ -41,23 +41,8 @@ double initial_localization()
 
   geometry_msgs::Twist cmd_vel;
 
-/*cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.linear.z = 0.0;
-  cmd_vel.angular.x = 0.0;
-  cmd_vel.angular.y = 0.0;
-  cmd_vel.angular.z = start_angular_vel;
-
-  while (ros::ok() && count < time_rot)
-  {
-    start_motion.publish(cmd_vel);
-    ros::spinOnce();
-    loop_rate.sleep();
-    count++;
-  }
-*/
   time_accum += time_rot;
-  count = time_rot; //
+  count = time_rot;
   cmd_vel.linear.x = start_linear_vel;
   cmd_vel.linear.y = 0.0;
   cmd_vel.linear.z = 0.0;
@@ -72,7 +57,7 @@ double initial_localization()
     loop_rate.sleep();
     count++;
   }
-
+/*
   time_accum += time_move;
 
   cmd_vel.linear.x = 0.0;
@@ -91,7 +76,7 @@ double initial_localization()
   }
 
   time_accum += time_rot;
-
+*/
   return dim;
 }
 
@@ -102,13 +87,8 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "send_exploration_goal");
 
   float dim = (float) initial_localization();
-/*
-  Client client("explore_server", true);
-  client.waitForServer();
-  ROS_INFO("Sending goal");
-  frontier_exploration::ExploreTaskGoal goal;
-*/
-  actionlib::SimpleActionClient<frontier_exploration::ExploreTaskAction> client("explore_server", true);//
+
+  actionlib::SimpleActionClient<frontier_exploration::ExploreTaskAction> client("object_search_server", true);
 
   ROS_INFO("Waiting for action server");//
   client.waitForServer();//
@@ -127,13 +107,7 @@ int main(int argc, char** argv)
   boundary.header.seq = 0;
   boundary.header.stamp = ros::Time::now();
   boundary.header.frame_id = "map";
- /* boundary.polygon.points.reserve(5);
-  boundary.polygon.points[0] = p1;
-  boundary.polygon.points[1] = p2;
-  boundary.polygon.points[2] = p3;
-  boundary.polygon.points[3] = p4;
-  boundary.polygon.points[4] = p5;
-*/
+
   boundary.polygon.points.push_back(p1);
   boundary.polygon.points.push_back(p2);
   boundary.polygon.points.push_back(p3);
