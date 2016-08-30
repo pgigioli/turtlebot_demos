@@ -5,9 +5,10 @@
   <include file="$(find turtlebot_navigation)/launch/gmapping_demo.launch" /> 
 
   <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
-
+<!--
+  <node name="yolo_object_detector" pkg="darknet_ros" type="yolo_object_detector" />
+-->
   <node name="yolo_face_detector" pkg="darknet_ros" type="yolo_face_detector" />
-
   <node name="base2cambase_tf_broadcaster" pkg="depth2cam" type="base2cambase_tf_broadcaster" />
 
   <include file="$(find frontier_exploration)/launch/object_search.launch" />
@@ -15,7 +16,7 @@
   <node name="send_exploration_goal" pkg="turtlebot_demos" type="send_exploration_goal" output="screen" launch-prefix="xterm -e">
     <param name="start_linear_vel" value="0.25" />
     <param name="start_angular_vel" value="0.50" />
-    <param name="boundary_dimension" value="20.0" />
+    <param name="boundary_dimension" value="30.0" />
     <param name="rotate_duration" value="160"/>
     <param name="move_forward_duration" value="20"/>
   </node>

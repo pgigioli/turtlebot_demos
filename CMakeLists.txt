@@ -14,6 +14,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   cv_bridge
   image_transport
+  message_generation
+  frontier_exploration
 )
 
 ## System dependencies are found with CMake's conventions
@@ -196,19 +198,24 @@ include_directories(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(pose_publisher scripts/pose_publisher.cpp)
-add_executable(startle scripts/startle.cpp)
-add_executable(get_pose scripts/get_pose.cpp)
-add_executable(set_pose scripts/set_pose.cpp)
-add_executable(send_exploration_goal scripts/send_exploration_goal.cpp)
-add_executable(image_converter scripts/image_converter.cpp)
-add_executable(face_detector_CPU scripts/face_detector_CPU.cpp)
-add_executable(face_detector_GPU scripts/face_detector_GPU.cpp)
-add_executable(pan_tilt_control scripts/pan_tilt_control.cpp)
-add_executable(upperbody_detector_CPU scripts/upperbody_detector_CPU.cpp)
-add_executable(face_detector_optimized scripts/face_detector_optimized.cpp)
-add_executable(template_matching scripts/template_matching.cpp)
-add_executable(take_pics scripts/take_pics.cpp)
+add_executable(pose_publisher src/pose_publisher.cpp)
+add_executable(startle src/startle.cpp)
+add_executable(get_pose src/get_pose.cpp)
+add_executable(set_pose src/set_pose.cpp)
+add_executable(send_exploration_goal src/send_exploration_goal.cpp)
+add_executable(image_converter src/image_converter.cpp)
+add_executable(face_detector_CPU src/face_detector_CPU.cpp)
+add_executable(face_detector_GPU src/face_detector_GPU.cpp)
+add_executable(pan_tilt_control src/pan_tilt_control.cpp)
+add_executable(upperbody_detector_CPU src/upperbody_detector_CPU.cpp)
+add_executable(face_detector_optimized src/face_detector_optimized.cpp)
+add_executable(template_matching src/template_matching.cpp)
+add_executable(take_pics src/take_pics.cpp)
+add_executable(test_image_transport src/test.cpp)
+add_executable(take_face_pics src/take_face_pics.cpp)
+add_executable(take_depthRGB_pics src/take_depthRGB_pics.cpp) 
+
+add_dependencies(send_exploration_goal frontier_exploration_generate_messages_cpp ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(startle ${catkin_LIBRARIES})
 target_link_libraries(pose_publisher ${catkin_LIBRARIES})
@@ -223,3 +230,6 @@ target_link_libraries(upperbody_detector_CPU ${catkin_LIBRARIES})
 target_link_libraries(face_detector_optimized ${catkin_LIBRARIES})
 target_link_libraries(template_matching ${catkin_LIBRARIES})
 target_link_libraries(take_pics ${catkin_LIBRARIES})
+target_link_libraries(test_image_transport ${catkin_LIBRARIES})
+target_link_libraries(take_face_pics ${catkin_LIBRARIES})
+targeT_link_libraries(take_depthRGB_pics ${catkin_LIBRARIES})

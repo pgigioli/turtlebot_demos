@@ -2,12 +2,16 @@
 
   <include file="$(find turtlebot_bringup)/launch/minimal.launch" /> 
 
-<!--  <include file="$(find openni2_launch)/launch/openni2.launch" /> -->
-  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch" />
+  <include file="$(find openni2_launch)/launch/openni2.launch" /> 
 
+<!--  <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
+-->
+<!--  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch" />
+-->
   <include file="$(find turtlebot_teleop)/launch/keyboard_teleop.launch" /> 
-  
+
   <node pkg="rqt_image_view" type="rqt_image_view" name="rqt_image_view" />
+
 <!--
   <node pkg="image_view" type="image_view" name="image_view" ns="camera/rgb">
 	<remap from="image" to="image_raw" />

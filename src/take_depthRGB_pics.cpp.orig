@@ -1,0 +1,94 @@
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Image.h>
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/objdetect/objdetect.hpp>
+#include <opencv2/gpu/gpu.hpp>
+#include <iostream>
+#include <stdio.h>
+#include <boost/foreach.hpp>
+
+using namespace cv;
+using namespace std;
+
+int ct = 0;
+int FRAME_W;
+int FRAME_H;
+int FRAME_AREA;
+
+class takeDepthRGBPics
+{
+   ros::NodeHandle nh;
+   image_transport::ImageTransport it;
+   image_transport::Subscriber image_sub;
+
+public:
+   takeDepthRGBPics() : it(nh)
+   {
+      image_sub = it.subscribe("/camera/rgb/image_raw", 1,
+			        &takeDepthRGBPics::rgb_callback, this);
+      image_sub = it.subscribe("/camera/depth/image", 1,
+			        &takeDepthRGBPics::depth_callback, this);
+
+      namedWindow("RGB View", WINDOW_NORMAL);
+      namedWindow("Depth View", WINDOW_NORMAL);
+   }
+
+   ~takeDepthRGBPics()
+   {
+      destroyWindow("RGB View");
+      destroyWindow("Depth View");
+   }
+
+private:
+   void rgb_callback(const sensor_msgs::ImageConstPtr& msg)
+   {
+      cv_bridge::CvImagePtr cv_ptr;
+
+      try {
+         cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+      } catch (cv_bridge::Exception& e) {
+         ROS_ERROR("cv_bridge exception: %s", e.what());
+	 return;
+      }
+
+      imshow("RGB View", cv_ptr->image);
+      waitKey(3);
+
+
+   void depth_callback(const sensor_msgs::Image::ConstPtr& msg)
+   {
+      cv_bridge::CvImageConstPtr cv_ptr_depth;
+
+      try {
+          cv_ptr_depth = cv_bridge::toCvShare(msg);
+      } catch (cv_bridge::Exception& e) {
+         ROS_ERROR("cv_bridge exception: %s", e.what());
+         return;
+      }
+
+      double max = 0.0;
+      minMaxLoc(cv_ptr_depth->image, 0, &max, 0, 0);
+      Mat normalized;
+      cv_ptr_depth->image.convertTo(normalized, CV_32F, 1.0/max, 0);
+
+      imshow("Depth View", normalized);
+      waitKey(3);
+   }
+};
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "take_pics");
+
+  ros::param::get("/usb_cam/image_width", FRAME_W);
+  ros::param::get("/usb_cam/image_height", FRAME_H);
+  FRAME_AREA = FRAME_W * FRAME_H;
+
+  takeDepthRGBPics tfp;
+  ros::spin();
+  return 0;
+}

@@ -31,7 +31,7 @@ void callback(const sensor_msgs::ImageConstPtr& msg)
 
 	string name = "/media/ubuntu/face_pictures/";
 	string type = ".jpg";
-	string title = "Paul2_new";
+	string title = "pic";
 
 	ss << name << title << ct << type;
 
