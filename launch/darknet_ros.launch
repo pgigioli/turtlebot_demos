@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
+
+  <node pkg="darknet_ros" type="YOLO_object_detector" name="YOLO_object_detector" />
+
+</launch>

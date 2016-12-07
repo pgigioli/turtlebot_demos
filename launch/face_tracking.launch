@@ -2,7 +2,7 @@
 
   <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
 
-  <node pkg="darknet_ros" type="yolo_face_detector" name="yolo_face_detector" />
+  <node pkg="darknet_ros_custom" type="yolo_face_detector" name="yolo_face_detector" />
   <node pkg="face_tracker" type="face_tracker" name="face_tracker" />
 
 </launch>

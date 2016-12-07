@@ -1,0 +1,7 @@
+<launch>
+
+  <include file="$(find turtlebot_demos)/launch/usb_cam.launch" />
+
+  <node pkg="ros_caffe" type="camera_depth_net" name="camera_depth_net" />
+
+</launch>

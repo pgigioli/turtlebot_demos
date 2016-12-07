@@ -1,0 +1,22 @@
+<launch>
+
+  <include file="$(find turtlebot_bringup)/launch/minimal.launch" /> 
+
+  <include file="$(find turtlebot_navigation)/launch/gmapping_demo.launch" /> 
+<!--
+  <include file="$(find hector_mapping)/launch/mapping_default.launch" />
+
+  <include file="$(find turtlebot_bringup)/launch/3dsensor.launch">
+    <arg name="rgb_processing" value="false" />
+    <arg name="depth_registration" value="false" />
+    <arg name="depth_processing" value="false" />
+    <arg name="scan_topic" value="/scan" />
+  </include>
+
+  <include file="$(find turtlebot_navigation)/launch/includes/move_base.launch.xml"/>
+
+  <include file="$(find frontier_exploration)/launch/global_map.launch" />
+-->
+  <include file="$(find turtlebot_demos)/launch/nav_params.launch.xml" />
+
+</launch>
